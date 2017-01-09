@@ -19,7 +19,7 @@ class MCA(object):
         Starts a MCA
 
         Params:
-            X : disjunctive array of size (n,m)
+            X : array of size (n,m), typically a pandas dataframe
             ncols : number of categorical variables
             n_components : number of axis to keep (non-zero eigenvalues)
                             If None, it is equal to min(n-1,m-ncol)
