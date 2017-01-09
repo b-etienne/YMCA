@@ -16,13 +16,15 @@ class MCA(object):
 
     def __init__(self, X, ind=None, supp=None, n_components=None):
         """
-        Initie une ACM
+        Starts a MCA
 
         Params:
-            X : tableau disjontif complet de taille (n,m)
-            ncols : nombre de variables catégoriques
-            n_components : nombre d'axes à conserver (valeurs propres non-nulles)
-                            Si None, c'est le min(n-1,m-ncol)
+            X : disjunctive array of size (n,m)
+            ncols : number of categorical variables
+            n_components : number of axis to keep (non-zero eigenvalues)
+                            If None, it is equal to min(n-1,m-ncol)
+            supp : supplementary variables, will not be taken into the computation but can
+                    be represented.
         """
         self.ncols = X.shape[1]
         if supp:
@@ -70,11 +72,8 @@ class MCA(object):
         del self.K
         del self.r
 
-        # Dr Matrix
-#        self.D_r = np.diag(1. / np.sqrt(self.r)) # On inverse directement Dr
-
         # Dc Matrix
-        self.D_c = np.diag(1. / np.sqrt(self.c)) # On inverse directement Dc
+        self.D_c = np.diag(1. / np.sqrt(self.c)) # We invert D_c straightaway.
 
         # Compute R = UΛVt
         self.R = np.dot(self.F, self.D_c)*(np.sqrt(self.n))
@@ -83,16 +82,16 @@ class MCA(object):
         self.U, self.sigma, self.V = randomized_svd(self.R,
                                                     n_components=self.n_components,
                                                     n_iter=5,random_state=None)
-        # Valeurs propres
+        # Eigen values
         self.eigenvals = self.sigma**2
 
 
 
     def row_profile_matrix(self):
         """
-        Retourne la matrice des profils-lignes
-        Attention : pour n grand, la matrice D_r peut causer un MemoryError
-        Désactivé pour le moment
+        Returns row profile matrix.
+        Warning : for n very large, can cause MemoryError
+        Deactivated for the moment.
         """
         pass
 #        return(np.linalg.solve(self.D_r, self.F))
@@ -100,21 +99,21 @@ class MCA(object):
 
     def column_profile_matrix(self):
         """
-        Retourne la matrice des profils-colonnez
+        Returns column profile matrix
         """
         return(np.linalg.solve(self.D_c, self.F))
 
 
     def individuals_coords(self):
         """
-        Retourne les coordonnées des individus sur les axes factoriels
+        Returns individuals' coords on axis
         """
         return(np.sqrt(self.n) * np.dot(self.U, np.diag(self.sigma)))
 
 
     def modalities_coords(self):
         """
-        Retourne les coordonnées des modalités sur les axes factoriels
+        Returns modalities' coords on axis
         """
         y1 = np.dot(np.dot(self.D_c,self.V.T), np.diag(self.sigma))
         if self.supp:
@@ -126,10 +125,10 @@ class MCA(object):
 
     def results(self, benzecri=False):
         """
-        Affiche les résultats en termes de valeurs propres et de variance
-        Possibilité de corriger les valeurs avec la correction de benzecri
+        Prints the results with eigenvalues and cumulative variance
+        Benzecri correction can also be used
         Params:
-            benzecri : booléen. Si True, effectue une correction de benzecri
+            benzecri : boolean. If True, performs benzecri correction.
         """
 
         p = self.ncols
@@ -151,14 +150,14 @@ class MCA(object):
 
     def coordinates(self, option=None):
         """
-        Retourne les coordonnées des individus et modalités
+        Returns the coordinates of individuals and modalities on the axis
 
         Params:
-            ndim : nombre d'axes pour lesquels on récupère les coordonnées
+            ndim : number of axis
 
         Output:
-            x : coordonnées des individus
-            y : coordonnées des modalités
+            x : individuals coords
+            y : modalities coords
         """
 
         if option:
@@ -166,9 +165,9 @@ class MCA(object):
         else:
             print("MCA Options")
             print("----------------")
-            print("Option 1 : Individus au barycentre des modalites")
-            print("Option 2 : Modalites au barycentre des individus")
-            print("Option 3 : Simultanée\n")
+            print("Option 1 : Individuals at barycenter of modalities")
+            print("Option 2 : Modalities at barycenter of individuals")
+            print("Option 3 : Simultaneous\n")
             choix = input("Choix : ")
 
 
@@ -191,7 +190,7 @@ class MCA(object):
 
     def contributions(self):
         """
-        Retourne la contribution des individus i et des modalités s aux axes
+        Returns the contribution of individuals i and modalities s to the axes.
 
         """
         x, y = self.coordinates(3)
@@ -205,11 +204,11 @@ class MCA(object):
 
     def plot(self, supp=False):
         """
-        Projette un graphe 2-D, avec ou sans les variables supp
+        Projects on a 2-D graph, with or without supplementary variables
         """
 
         if supp and not self.supp:
-            print("Il n'y a pas de variables supplémentaires dans la configuration choisie")
+            print("No supplementary variables in chosen configuration")
 
         else:
             x, y = self.coordinates(3)
@@ -240,8 +239,9 @@ class MCA(object):
 
     def supplement(self):
         """
-        Projette les variables supp sur les axes factoriels en tant que barycentre
-        des individus auxquelles elles appartiennent
+        Projects the supp variables on the factorial axis as barycenter of the individuals 
+        to which they belong
+        
         """
 
 #        x_supp = np.zeros((self.n_components,self.X_supp.shape[1]))
@@ -253,11 +253,10 @@ class MCA(object):
 
 if __name__ == '__main__':
 
-    df = pd.read_excel('../chiens.xlsx')
-    df = df.set_index('race')
-    df2 = pd.get_dummies(df)
-    mmca = MCA(df, list(df.columns)[:-2],['affect','agress'])
+    df = pd.read_excel('../chiens.xlsx') # Change file name
+    df = df.set_index('race') #These are your individuals
+    mmca = MCA(df, list(df.columns)[:-2],['affect','agress']) # Choose which columns you want to keep
 #    mmca = MCA(df, list(df.columns))
-    mmca.results()
-    mmca.plot(True)
-#    mmca.plot(2)
+    mmca.results() # Show results
+    mmca.plot(True) # Plot results
+
