@@ -2,7 +2,7 @@
 """
 Created on Wed Nov 30 17:33:29 2016
 
-@author: BE34B2EN
+@author: betienne
 """
 
 import numpy as np
