@@ -1,0 +1,2 @@
+# YMCA
+Multiple Correspondance Analysis
